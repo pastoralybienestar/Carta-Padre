@@ -3,910 +3,613 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para mi Papá</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Para Papá</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #0f172a; /* Fondo oscuro inicial */
-            color: #f8fafc;
+            background-color: #000;
+            color: #1c1917; /* Texto principal oscuro para el papel */
             font-family: 'Poppins', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #ambient-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            overflow: hidden;
+            background-color: #0f172a; /* Fondo azul unificado */
             transition: background-color 2s ease;
         }
 
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.7;
+            transition: background-color 2s ease;
+        }
+
+        /* Colores unificados de "amanecer/camino" para todas las escenas */
+        .blob-1 {
+            width: 60vw; height: 60vw;
+            top: -20%; left: -10%;
+            background-color: #0284c7;
+            animation: float1 25s infinite ease-in-out;
+        }
+
+        .blob-2 {
+            width: 50vw; height: 50vw;
+            bottom: -20%; right: -10%;
+            background-color: #3b82f6;
+            animation: float2 20s infinite ease-in-out reverse;
+        }
+
+        .blob-3 {
+            width: 70vw; height: 70vw;
+            top: 20%; left: 20%;
+            background-color: #172554;
+            animation: float3 30s infinite ease-in-out;
+        }
+
+        @keyframes float1 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(10%, 10%) scale(1.1); } }
+        @keyframes float2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-10%, -10%) scale(1.05); } }
+        @keyframes float3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(5%, -15%) scale(1.15); } }
+
         #canvas-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
         }
 
-        #ui-layer {
+        #ui-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: none; /* Deja pasar clicks al 3D si es necesario */
             z-index: 10;
-        }
-
-        .text-panel {
-            background: #fdfaf6; /* Color de papel cálido */
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
-            border: 1px solid #d6d3d1;
-            border-radius: 4px; /* Bordes más rectos, como una hoja de papel */
-            padding: 3.5rem 4.5rem;
-            max-width: 800px;
-            width: 90%;
-            text-align: justify; /* Párrafos justificados como en las cartas */
             opacity: 0;
-            transform: translateY(30px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(0,0,0,0.03);
-            pointer-events: auto; /* Permite interacción con este elemento */
-            position: relative;
+            pointer-events: none; /* Hasta que inicie */
         }
 
-        /* Detalle de cinta o doblez opcional */
-        .text-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30%;
-            height: 1px;
-            background: rgba(0,0,0,0.1);
+        /* Estilo de la carta física */
+        .text-panel {
+            background-color: #fdfaf6;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            padding: 3rem 4rem;
+            border-radius: 8px;
+            max-width: 700px;
+            width: 85%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255,255,255,0.1);
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
         h1 {
-            font-family: 'Dancing Script', cursive; /* Letra manuscrita para títulos */
+            font-family: 'Dancing Script', cursive;
             font-size: 3.5rem;
-            color: #1c1917; /* Color tinta oscura */
+            margin-top: 0;
             margin-bottom: 1.5rem;
-            text-shadow: none;
-            border-bottom: 1px solid #e7e5e4;
-            padding-bottom: 10px;
-            text-align: center;
+            color: #1c1917;
+            font-weight: 700;
         }
 
         p {
-            font-family: 'Playfair Display', serif; /* Fuente serif clásica y elegante */
-            font-size: 1.25rem;
-            line-height: 1.9;
-            margin-bottom: 1.5rem;
-            color: #292524; /* Color de tinta oscura */
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            line-height: 1.8;
+            margin-bottom: 0;
+            color: #292524;
+            text-align: justify;
         }
 
         .highlight {
-            color: #991b1b; /* Rojo oscuro elegante para resaltar */
-            font-weight: 700;
+            color: #9f1239; /* Rojo tinto para destacar */
             font-style: italic;
+            font-weight: 700;
         }
 
-        #controls {
-            position: absolute;
-            bottom: 2rem;
-            display: flex;
-            gap: 1rem;
-            pointer-events: auto;
-            z-index: 20;
-        }
-
-        button {
-            background: transparent;
-            color: #fdfaf6;
-            border: 1px solid rgba(255,255,255,0.5);
-            padding: 0.8rem 2rem;
-            border-radius: 4px; /* Combinar con el estilo de la carta */
-            font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
-            font-weight: 300;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
-            box-shadow: none;
-        }
-
-        button:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: #fff;
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        button:disabled {
-            background: transparent;
-            border-color: rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.3);
-            cursor: not-allowed;
-            transform: none;
-            opacity: 1;
-        }
-
-        .progress-dots {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            justify-content: center;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.15); /* Puntos más sutiles en el papel */
-            transition: all 0.3s ease;
-        }
-
-        .dot.active {
-            background: #991b1b; /* Punto rojo que coincide con el highlight */
-            transform: scale(1.3);
-            box-shadow: none;
-        }
-
-        /* Estilos para el mensaje final */
         .final-message {
             font-family: 'Dancing Script', cursive;
             font-size: 3rem;
-            color: #991b1b;
-            font-weight: normal;
-            text-shadow: none;
             text-align: center;
+            color: #1c1917;
             margin-top: 1rem;
+            line-height: 1.4;
         }
 
-        /* --- ESTILOS DEL SOBRE 3D INICIAL --- */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: transparent;
+            color: #1c1917;
+            border: 1px solid #1c1917;
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: #1c1917;
+            color: #fdfaf6;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background-color: transparent;
+            color: #1c1917;
+        }
+
+        .dots { display: flex; gap: 8px; }
+        .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background-color: rgba(28, 25, 23, 0.3);
+            transition: all 0.3s ease;
+        }
+        .dot.active {
+            background-color: #1c1917;
+            transform: scale(1.3);
+        }
+
         #start-screen {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 100;
-            transition: opacity 1s ease, transform 1.5s ease-in-out;
-            perspective: 1200px;
+            z-index: 20;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
         }
 
+        .intro-title {
+            color: #f8fafc;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.8rem;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            opacity: 0.9;
+        }
+
+        .intro-hint {
+            color: #cbd5e1;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 40px;
+            animation: pulseHint 2s infinite;
+        }
+
+        @keyframes pulseHint {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* Contenedor del sobre */
         .envelope-wrapper {
             position: relative;
-            width: 320px; 
-            height: 220px;
             cursor: pointer;
-            transition: transform 0.4s ease;
-            transform-style: preserve-3d;
+            animation: floatEnvelope 4s ease-in-out infinite;
         }
 
-        .envelope-wrapper:hover {
-            transform: translateY(-10px) scale(1.02);
+        @keyframes floatEnvelope {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
         }
 
-        .envelope-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #e2e8f0; border-radius: 8px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            z-index: 1;
-        }
-
-        .letter-paper {
-            position: absolute;
-            bottom: 5px; left: 5%; width: 90%; height: 95%;
-            background: #fafaf9; border-radius: 5px;
-            z-index: 2;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; text-align: center; border: 1px solid #e7e5e4;
-        }
-
-        .letter-paper h2 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 2.8rem; color: #1e293b; margin: 0;
-        }
-
-        .letter-paper p {
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.9rem; color: #64748b; margin-top: 10px; margin-bottom: 0;
+        .envelope {
+            width: 300px;
+            height: 200px;
+            background-color: #e2e8f0;
+            position: relative;
+            border-radius: 5px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,0,0,0.1);
+            perspective: 1000px;
         }
 
         .envelope-front {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
-            background: #cbd5e1;
-            clip-path: polygon(0 100%, 0 0, 50% 55%, 100% 0, 100% 100%);
-            z-index: 3; border-radius: 0 0 8px 8px;
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 100px 150px;
+            border-color: transparent #cbd5e1 #94a3b8 #cbd5e1;
+            border-radius: 0 0 5px 5px;
+            z-index: 3;
+            pointer-events: none;
         }
 
-        .envelope-bottom {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 60%;
-            background: #94a3b8;
-            clip-path: polygon(0 100%, 50% 0, 100% 100%);
-            z-index: 4; border-radius: 0 0 8px 8px;
-        }
-
-        .flap {
-            position: absolute; top: 0; left: 0; width: 100%; height: 65%;
-            background: #f1f5f9;
-            clip-path: polygon(0 0, 100% 0, 50% 100%);
-            z-index: 5;
+        .envelope-flap {
+            position: absolute;
+            top: 0; left: 0;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 100px 150px;
+            border-color: #f1f5f9 transparent transparent transparent;
             transform-origin: top;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), z-index 0s 0.3s;
+            z-index: 4;
+            transition: transform 0.6s ease-in-out;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
         }
 
         .wax-seal {
-            position: absolute; left: 50%; bottom: 15px;
-            transform: translateX(-50%);
-            width: 50px; height: 50px; background: #b91c1c; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            color: #fecaca; font-family: 'Playfair Display', serif; font-size: 24px; font-style: italic; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 0 10px rgba(100,0,0,0.8);
-            transition: opacity 0.3s;
+            position: absolute;
+            bottom: -20px;
+            left: calc(50% - 25px);
+            width: 50px; height: 50px;
+            background: radial-gradient(circle at 30% 30%, #f43f5e, #be123c, #881337);
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fca5a5;
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.5rem;
+            transition: opacity 0.3s ease;
         }
 
-        .instruction-text {
-            color: #94a3b8; margin-top: 50px;
-            font-family: 'Poppins', sans-serif; font-size: 1rem;
-            letter-spacing: 2px; text-transform: uppercase;
-            animation: pulseText 2s infinite;
-            transition: opacity 0.3s;
+        .wax-seal::after {
+            content: '';
+            position: absolute;
+            width: 40px; height: 40px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
         }
 
-        /* Animaciones al abrir el sobre */
-        .envelope-wrapper.open .flap {
-            transform: rotateX(180deg);
-            z-index: 1; /* Se esconde detrás de la carta */
+        .letter-inside {
+            position: absolute;
+            bottom: 10px; left: 10px;
+            width: 280px; height: 180px;
+            background-color: #fdfaf6;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 4px;
+            transition: transform 0.8s ease-in-out 0.3s;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
         }
 
-        .envelope-wrapper.open .wax-seal {
+        .letter-inside h2 {
+            font-family: 'Dancing Script', cursive;
+            color: #1c1917;
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        /* Efecto destello mágico al abrir */
+        #magic-glow {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            background: radial-gradient(circle, #fff, #fef08a, transparent 70%);
+            border-radius: 50%;
             opacity: 0;
-        }
-
-        .envelope-wrapper.open .letter-paper {
-            transform: translateY(-130px);
-            transition-delay: 0.5s; /* Sube después de que se abre la solapa */
-        }
-
-        @keyframes pulseText {
-            0%, 100% { opacity: 0.4; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
+            z-index: 10;
+            pointer-events: none;
         }
 
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
-            p { font-size: 1.1rem; text-align: left; } /* En móvil se lee mejor a la izquierda */
-            .text-panel { padding: 2rem 1.5rem; }
+            p { font-size: 1.1rem; text-align: left; }
+            .text-panel { padding: 2rem 1.5rem; width: 90%; }
             button { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
             .final-message { font-size: 2.2rem; }
+            .blob { filter: blur(80px); }
+            .blob-1 { width: 100vw; height: 100vw; }
+            .blob-2 { width: 90vw; height: 90vw; }
+            .blob-3 { width: 120vw; height: 120vw; }
+            .intro-title { font-size: 1.4rem; text-align: center; padding: 0 20px; }
         }
     </style>
 </head>
 <body>
 
+<div id="ambient-bg">
+    <div class="blob blob-1" id="b1"></div>
+    <div class="blob blob-2" id="b2"></div>
+    <div class="blob blob-3" id="b3"></div>
+</div>
+
 <div id="start-screen">
+    <div class="intro-title">Para la persona que me enseñó a volar...</div>
+    
     <div class="envelope-wrapper" id="envelope-btn">
-        <div class="envelope-bg"></div>
-        <div class="letter-paper">
-            <h2>Para Papá</h2>
-            <p>Con mucho cariño ❤️</p>
+        <div class="envelope">
+            <div class="envelope-flap" id="flap"></div>
+            <div class="wax-seal" id="seal">P</div>
+            <div class="letter-inside" id="inner-letter">
+                <h2>Para Papá</h2>
+                <span style="font-family: 'Playfair Display'; font-style: italic; font-size: 0.9rem; margin-top: 10px; color: #57534e;">Con mucho cariño</span>
+            </div>
+            <div class="envelope-front"></div>
         </div>
-        <div class="envelope-front"></div>
-        <div class="envelope-bottom"></div>
-        <div class="flap">
-            <div class="wax-seal">P</div>
-        </div>
+        <div id="magic-glow"></div>
     </div>
-    <div class="instruction-text" id="instruction">Haz clic en el sobre para abrir</div>
+
+    <div class="intro-hint">Toca el sobre para abrir</div>
 </div>
 
 <div id="canvas-container"></div>
 
-<div id="ui-layer">
-    <div class="text-panel" id="text-container">
-        <div class="progress-dots" id="dots-container"></div>
-        <h1 id="title-text">Querido papá,</h1>
-        <div id="body-text"></div>
-    </div>
-
-    <div id="controls">
-        <button id="prev-btn" disabled>Anterior</button>
-        <button id="next-btn">Siguiente</button>
+<div id="ui-container">
+    <div class="text-panel" id="text-panel">
+        <h1 id="title-text">Querido papá</h1>
+        <div id="body-text">
+            <p>...</p>
+        </div>
+        
+        <div class="controls">
+            <button id="prev-btn" disabled>Anterior</button>
+            <div class="dots" id="dots-container"></div>
+            <button id="next-btn">Siguiente</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- DATOS DE LA CARTA ---
     const cartaData = [
         {
             title: "Querido papá",
             text: "Hoy quiero escribirte estas palabras que nacen desde lo más profundo de mi corazón, porque hay sentimientos que no siempre se dicen, pero que merecen ser expresados.",
-            scene: 'intro',
-            color: '#0f172a' // Slate 900
+            scene: 'intro'
         },
         {
             title: "Gracias",
             text: "Gracias por ser ese hombre que ha caminado delante de mí abriendo senderos cuando el camino parecía incierto. Gracias por las veces que guardaste silencio para escucharme, por las veces que te cansaste trabajando para que nada faltara en casa y por cada sacrificio que hiciste sin esperar reconocimiento.",
-            scene: 'path',
-            color: '#1e3a8a' // Blue 900
+            scene: 'path'
         },
         {
             title: "Más que un padre",
             text: "Eres mucho más que un padre. Has sido <span class='highlight'>guía</span> cuando me sentí perdido, <span class='highlight'>refugio</span> cuando llegaron las tormentas, <span class='highlight'>consejo</span> cuando las decisiones parecían difíciles y <span class='highlight'>ejemplo</span> cuando necesitaba aprender el verdadero significado de la responsabilidad, la honestidad y el amor.",
-            scene: 'storm',
-            color: '#172554' // Blue 950
+            scene: 'storm'
         },
         {
             title: "Tus enseñanzas",
             text: "A lo largo de la vida he comprendido que muchas de las cosas que hoy soy tienen la huella de tus enseñanzas. En tus palabras encontré sabiduría; en tus acciones encontré coherencia; y en tu amor encontré la fuerza para seguir adelante cuando las circunstancias parecían superiores a mis capacidades.",
-            scene: 'wisdom',
-            color: '#451a03' // Orange 950
+            scene: 'wisdom'
         },
         {
             title: "Esfuerzos silenciosos",
             text: "Recuerdo tus esfuerzos silenciosos, esos que quizá nadie vio, pero que construyeron los cimientos de nuestra familia. Recuerdo tus desvelos, tus preocupaciones escondidas detrás de una sonrisa y tu manera de sostenernos incluso cuando tú mismo necesitabas apoyo.",
-            scene: 'foundation',
-            color: '#3f3f46' // Zinc 700
+            scene: 'foundation'
         },
         {
             title: "Un árbol fuerte",
             text: "Papá, eres como un <span class='highlight'>árbol fuerte</span> que resiste los vientos más intensos para proteger a quienes descansan bajo su sombra. Tus raíces están llenas de valores, tu tronco de fortaleza y tus ramas de generosidad.",
-            scene: 'tree',
-            color: '#14532d' // Green 900
+            scene: 'tree'
         },
         {
             title: "Verdadera grandeza",
             text: "Gracias por enseñarme que la verdadera grandeza no está en el poder ni en las riquezas, sino en servir, amar y permanecer fiel a los principios.",
-            scene: 'stars',
-            color: '#2e1065' // Purple 900
+            scene: 'stars'
         },
         {
             title: "Te admiro",
             text: "Hoy quiero que sepas que admiro al hombre que eres. Admiro tu perseverancia, tu valentía para enfrentar los desafíos, tu capacidad para levantarte después de cada caída y tu inmenso corazón para seguir amando aun en medio de las dificultades.",
-            scene: 'heart',
-            color: '#7f1d1d' // Red 900
+            scene: 'heart'
         },
         {
             title: "Sinceramente",
             text: "Si alguna vez olvidé agradecerte, hoy lo hago con toda sinceridad. Gracias por cada abrazo, por cada corrección hecha con amor, por cada palabra de aliento, por cada oración pronunciada en silencio por mí, por cada sueño que ayudaste a construir y por cada paso que acompañaste sin pedir nada a cambio.",
-            scene: 'dreams',
-            color: '#064e3b' // Emerald 900
+            scene: 'dreams'
         },
         {
             title: "Mis deseos",
             text: "Que Dios te bendiga abundantemente, que recompense todo el bien que has sembrado y que te conceda salud, paz, alegría y muchos años para seguir compartiendo tu vida con quienes te amamos.",
-            scene: 'blessings',
-            color: '#7c2d12' // Orange 900
+            scene: 'blessings'
         },
         {
             title: "",
             text: "<p class='final-message'>Mi mayor fortuna no es lo que tengo, sino haber tenido el privilegio de llamarte papá.</p>",
-            scene: 'final',
-            color: '#000000' // Black
+            scene: 'final'
         }
     ];
 
     let currentStep = 0;
-
-    // --- ELEMENTOS DEL DOM ---
+    
+    // Referencias DOM
     const startScreen = document.getElementById('start-screen');
-    const envelopeBtn = document.getElementById('envelope-btn');
-    const instructionText = document.getElementById('instruction');
-    const textContainer = document.getElementById('text-container');
+    const uiContainer = document.getElementById('ui-container');
+    const textPanel = document.getElementById('text-panel');
     const titleText = document.getElementById('title-text');
     const bodyText = document.getElementById('body-text');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const dotsContainer = document.getElementById('dots-container');
 
-    // --- CONFIGURACIÓN THREE.JS ---
-    let scene, camera, renderer, particles, clock;
-    let currentObjects = []; // Para limpiar la escena al cambiar
-    let animationId;
-    let targetRotationX = 0;
-    let targetRotationY = 0;
-    let mouseX = 0;
-    let mouseY = 0;
-    const windowHalfX = window.innerWidth / 2;
-    const windowHalfY = window.innerHeight / 2;
+    const envelopeBtn = document.getElementById('envelope-btn');
+    const flap = document.getElementById('flap');
+    const seal = document.getElementById('seal');
+    const innerLetter = document.getElementById('inner-letter');
+    const magicGlow = document.getElementById('magic-glow');
+
+    envelopeBtn.addEventListener('click', () => {
+        // Evitar múltiples clics
+        envelopeBtn.style.pointerEvents = 'none';
+
+        // 1. Ocultar el sello
+        seal.style.opacity = '0';
+
+        // 2. Abrir la solapa
+        setTimeout(() => {
+            flap.style.transform = 'rotateX(180deg)';
+            flap.style.zIndex = '1';
+        }, 100);
+
+        // 3. Sacar la carta
+        setTimeout(() => {
+            innerLetter.style.transform = 'translateY(-120px) scale(1.1)';
+            innerLetter.style.zIndex = '6';
+        }, 500);
+
+        // 4. Destello mágico
+        setTimeout(() => {
+            gsap.to(magicGlow, {
+                opacity: 1,
+                scale: 100,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
+        }, 1500);
+
+        // 5. Transición a la escena 3D principal
+        setTimeout(() => {
+            gsap.to(startScreen, {
+                opacity: 0,
+                duration: 1,
+                onComplete: () => {
+                    startScreen.style.display = 'none';
+                    uiContainer.style.pointerEvents = 'auto';
+                    
+                    // Mostrar UI de la carta
+                    gsap.to(uiContainer, { opacity: 1, duration: 1 });
+                    
+                    // Iniciar la experiencia interactiva
+                    init3D();
+                    setupUI();
+                    updateCarta(0);
+                }
+            });
+        }, 2200);
+    });
+
+    function setupUI() {
+        // Crear puntos de progreso
+        cartaData.forEach((_, index) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (index === 0) dot.classList.add('active');
+            dotsContainer.appendChild(dot);
+        });
+
+        prevBtn.addEventListener('click', () => updateCarta(currentStep - 1));
+        nextBtn.addEventListener('click', () => updateCarta(currentStep + 1));
+    }
+
+    function updateCarta(index) {
+        if (index < 0 || index >= cartaData.length) return;
+        
+        const isFinal = index === cartaData.length - 1;
+
+        // Animar salida del texto actual
+        gsap.to(textPanel, {
+            opacity: 0, 
+            y: 20, 
+            duration: 0.4, 
+            onComplete: () => {
+                currentStep = index;
+                const data = cartaData[currentStep];
+
+                // Actualizar contenido de texto
+                titleText.innerHTML = data.title;
+                titleText.style.display = data.title === "" ? 'none' : 'block';
+                bodyText.innerHTML = `<p>${data.text}</p>`;
+
+                // Cargar nueva escena 3D asociada
+                loadSceneData(data.scene);
+
+                // Actualizar estado de botones
+                prevBtn.disabled = currentStep === 0;
+                nextBtn.innerHTML = isFinal ? "Volver a leer" : "Siguiente";
+                if(isFinal) {
+                    nextBtn.onclick = () => updateCarta(0);
+                } else {
+                    nextBtn.onclick = () => updateCarta(currentStep + 1);
+                }
+
+                // Actualizar puntos de progreso
+                document.querySelectorAll('.dot').forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentStep);
+                });
+
+                // Animar entrada del nuevo texto
+                gsap.to(textPanel, { opacity: 1, y: 0, duration: 0.6, ease: "back.out(1.2)" });
+            }
+        });
+    }
+
+    let scene, camera, renderer;
+    let currentObjects = []; // Almacena los objetos 3D de la escena actual
+    let animationFrameId;
 
     function init3D() {
-        scene = new THREE.Scene();
+        const container = document.getElementById('canvas-container');
         
-        // Niebla sutil
-        scene.fog = new THREE.FogExp2(0x0f172a, 0.002);
+        // Crear Escena
+        scene = new THREE.Scene();
+        // Niebla suave para darle profundidad (color azul oscuro unificado)
+        scene.fog = new THREE.FogExp2('#0f172a', 0.002);
 
+        // Cámara
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.z = 30;
+        camera.position.y = 5;
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        // Renderizador con fondo transparente para dejar ver las auroras CSS
+        renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimización
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
 
-        clock = new THREE.Clock();
-
-        // Luces generales
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // Luces
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
-
-        const pointLight = new THREE.PointLight(0xffffff, 1);
-        pointLight.position.set(20, 20, 20);
-        scene.add(pointLight);
-
-        const pointLight2 = new THREE.PointLight(0xfbbf24, 0.8);
-        pointLight2.position.set(-20, -10, 10);
-        scene.add(pointLight2);
-
-        // Fondo de estrellas (siempre presente pero sutil)
-        createStarsBackground();
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 10);
+        scene.add(directionalLight);
 
         // Eventos
         window.addEventListener('resize', onWindowResize);
-        document.addEventListener('mousemove', onDocumentMouseMove);
-        
-        // Touch support para el movimiento sutil
-        document.addEventListener('touchmove', onDocumentTouchMove, { passive: true });
+        document.addEventListener('mousemove', onMouseMove);
 
-        // Iniciar loop
+        // Iniciar loop de animación
         animate();
     }
 
-    function createStarsBackground() {
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
-        for (let i = 0; i < 2000; i++) {
-            vertices.push(
-                THREE.MathUtils.randFloatSpread(400),
-                THREE.MathUtils.randFloatSpread(400),
-                THREE.MathUtils.randFloatSpread(400)
-            );
-        }
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        const material = new THREE.PointsMaterial({ 
-            color: 0xffffff, 
-            size: 0.5,
-            transparent: true,
-            opacity: 0.4
-        });
-        particles = new THREE.Points(geometry, material);
-        scene.add(particles);
-    }
+    // Interacción suave con el mouse
+    let mouseX = 0;
+    let mouseY = 0;
+    let targetX = 0;
+    let targetY = 0;
+    const windowHalfX = window.innerWidth / 2;
+    const windowHalfY = window.innerHeight / 2;
 
-    //    
-    // Limpiar objetos anteriores
-    function clearCurrentObjects() {
-        currentObjects.forEach(obj => {
-            if(obj.geometry) obj.geometry.dispose();
-            if(obj.material) {
-                if(Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-                else obj.material.dispose();
-            }
-            scene.remove(obj);
-        });
-        currentObjects = [];
-    }
-
-    // Escena 1: Introducción (Partículas cálidas flotantes)
-    function createIntroScene() {
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
-        const colors = [];
-        const colorPalette = [new THREE.Color(0xfbbf24), new THREE.Color(0xf59e0b), new THREE.Color(0xffedd5)];
-
-        for (let i = 0; i < 500; i++) {
-            vertices.push(
-                THREE.MathUtils.randFloatSpread(100),
-                THREE.MathUtils.randFloatSpread(100),
-                THREE.MathUtils.randFloatSpread(100)
-            );
-            const c = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-            colors.push(c.r, c.g, c.b);
-        }
-
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-        const material = new THREE.PointsMaterial({
-            size: 1.5,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0, // Inicia invisible para fade in
-            blending: THREE.AdditiveBlending
-        });
-
-        const points = new THREE.Points(geometry, material);
-        scene.add(points);
-        currentObjects.push(points);
-
-        // Animación personalizada
-        points.userData.update = (time) => {
-            points.rotation.y = time * 0.05;
-            points.rotation.x = time * 0.02;
-        };
-
-        gsap.to(material, { opacity: 0.8, duration: 2 });
-    }
-
-    // Escena 2: Camino (Un sendero de esferas brillantes)
-    function createPathScene() {
-        const pathGroup = new THREE.Group();
-        
-        for(let i = 0; i < 30; i++) {
-            const geometry = new THREE.SphereGeometry(Math.random() * 0.8 + 0.2, 16, 16);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x60a5fa, // Blue 400
-                emissive: 0x2563eb,
-                emissiveIntensity: 0.5,
-                shininess: 100,
-                transparent: true,
-                opacity: 0
-            });
-            const sphere = new THREE.Mesh(geometry, material);
-            
-            // Posicionar como un camino sinuoso hacia la cámara
-            sphere.position.set(
-                Math.sin(i * 0.5) * 10,
-                -10 + i * 0.8, // Sube
-                -50 + i * 2    // Viene de lejos
-            );
-            
-            pathGroup.add(sphere);
-            
-            gsap.to(material, { opacity: 1, duration: 1, delay: i * 0.05 });
-        }
-        
-        scene.add(pathGroup);
-        currentObjects.push(pathGroup);
-
-        pathGroup.userData.update = (time) => {
-            pathGroup.children.forEach((child, i) => {
-                child.position.y += Math.sin(time * 2 + i) * 0.02;
-            });
-        };
-    }
-
-    // Escena 3: Refugio/Tormenta (Geometría abstracta protectora)
-    function createStormScene() {
-        const group = new THREE.Group();
-
-        // Paragüas/Escudo abstracto
-        const geoShield = new THREE.TorusGeometry(15, 0.5, 16, 100, Math.PI);
-        const matShield = new THREE.MeshPhysicalMaterial({
-            color: 0x38bdf8,
-            metalness: 0.2,
-            roughness: 0.1,
-            transmission: 0.9,
-            transparent: true,
-            opacity: 0
-        });
-        const shield = new THREE.Mesh(geoShield, matShield);
-        shield.rotation.x = Math.PI / 2;
-        shield.position.y = 5;
-        group.add(shield);
-
-        // "Lluvia" o tormenta alrededor
-        const geoRain = new THREE.BufferGeometry();
-        const rainVerts = [];
-        for(let i=0; i<800; i++) {
-            rainVerts.push(
-                THREE.MathUtils.randFloatSpread(60),
-                Math.random() * 40,
-                THREE.MathUtils.randFloatSpread(60)
-            );
-        }
-        geoRain.setAttribute('position', new THREE.Float32BufferAttribute(rainVerts, 3));
-        const matRain = new THREE.PointsMaterial({color: 0x94a3b8, size: 0.2, transparent: true, opacity:0});
-        const rain = new THREE.Points(geoRain, matRain);
-        group.add(rain);
-
-        scene.add(group);
-        currentObjects.push(group, matShield, matRain);
-
-        gsap.to(matShield, {opacity: 1, duration: 2});
-        gsap.to(matRain, {opacity: 0.4, duration: 2});
-
-        group.userData.update = (time) => {
-            shield.rotation.z = time * 0.2;
-            // Animar lluvia cayendo
-            const positions = rain.geometry.attributes.position.array;
-            for(let i = 1; i < positions.length; i+=3) {
-                positions[i] -= 0.5;
-                if(positions[i] < -20) positions[i] = 40;
-            }
-            rain.geometry.attributes.position.needsUpdate = true;
-        };
-    }
-
-    // Escena 4: Sabiduría (Libro o figuras geométricas ascendentes)
-    function createWisdomScene() {
-        const group = new THREE.Group();
-        
-        for(let i=0; i<15; i++) {
-            const geo = new THREE.OctahedronGeometry(Math.random() * 2 + 1);
-            const mat = new THREE.MeshStandardMaterial({
-                color: 0xfde047, // Yellow 300
-                wireframe: true,
-                transparent: true,
-                opacity: 0
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            
-            mesh.position.set(
-                THREE.MathUtils.randFloatSpread(30),
-                THREE.MathUtils.randFloatSpread(30),
-                THREE.MathUtils.randFloatSpread(20) - 10
-            );
-            
-            // Velocidades aleatorias
-            mesh.userData = {
-                rx: Math.random() * 0.02,
-                ry: Math.random() * 0.02,
-                vy: Math.random() * 0.05 + 0.02
-            };
-            
-            group.add(mesh);
-            gsap.to(mat, {opacity: 0.6, duration: 2, delay: i * 0.1});
-        }
-        
-        scene.add(group);
-        currentObjects.push(group);
-
-        group.userData.update = () => {
-            group.children.forEach(child => {
-                child.rotation.x += child.userData.rx;
-                child.rotation.y += child.userData.ry;
-                child.position.y += child.userData.vy;
-                if(child.position.y > 20) child.position.y = -20;
-            });
-        };
-    }
-
-    //    // Escena 6: Árbol (Generación procedural básica)
-    function createTreeScene() {
-        const treeGroup = new THREE.Group();
-
-        // Materiales
-        const trunkMat = new THREE.MeshStandardMaterial({ 
-            color: 0x78350f, // Amber 900
-            roughness: 0.9,
-            transparent: true,
-            opacity: 0
-        });
-        const leafMat = new THREE.MeshStandardMaterial({ 
-            color: 0x22c55e, // Green 500
-            roughness: 0.6,
-            transparent: true,
-            opacity: 0
-        });
-
-        // Tronco principal
-        const trunkGeo = new THREE.CylinderGeometry(1, 2, 10, 8);
-        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-        trunk.position.y = -5;
-        treeGroup.add(trunk);
-
-        // Función recursiva para ramas simples
-        function createBranch(parentPos, length, radius, angleX, angleZ, level) {
-            if (level === 0) return;
-
-            const branchGeo = new THREE.CylinderGeometry(radius*0.7, radius, length, 8);
-            // Mover el pivote a la base del cilindro
-            branchGeo.translate(0, length/2, 0); 
-            const branch = new THREE.Mesh(branchGeo, trunkMat);
-            
-            branch.position.copy(parentPos);
-            branch.rotation.x = angleX;
-            branch.rotation.z = angleZ;
-
-            treeGroup.add(branch);
-
-            // Calcular punta de la rama
-            const endPos = new THREE.Vector3(0, length, 0);
-            endPos.applyEuler(branch.rotation);
-            endPos.add(branch.position);
-
-            // Agregar hojas si es el último nivel o penúltimo
-            if(level <= 2) {
-                const leafGeo = new THREE.DodecahedronGeometry(Math.random() * 2 + 1.5);
-                const leaf = new THREE.Mesh(leafGeo, leafMat);
-                leaf.position.copy(endPos);
-                treeGroup.add(leaf);
-            }
-
-            // Ramificar
-            createBranch(endPos, length * 0.7, radius * 0.7, angleX + 0.5, angleZ + 0.5, level - 1);
-            createBranch(endPos, length * 0.7, radius * 0.7, angleX - 0.5, angleZ - 0.5, level - 1);
-            if(Math.random() > 0.3) createBranch(endPos, length * 0.6, radius * 0.6, angleX + 0.3, angleZ - 0.6, level - 1);
-        }
-
-        createBranch(new THREE.Vector3(0, 0, 0), 6, 1.2, 0.2, 0.3, 3);
-        createBranch(new THREE.Vector3(0, 0, 0), 5, 1.0, -0.3, -0.2, 3);
-
-        // Escalar de 0 a 1
-        treeGroup.scale.set(0.01, 0.01, 0.01);
-        scene.add(treeGroup);
-        currentObjects.push(treeGroup, trunkMat, leafMat);
-
-        gsap.to(treeGroup.scale, { x: 1, y: 1, z: 1, duration: 3, ease: "elastic.out(1, 0.5)" });
-        gsap.to(trunkMat, { opacity: 1, duration: 2 });
-        gsap.to(leafMat, { opacity: 0.9, duration: 2, delay: 0.5 });
-
-        treeGroup.userData.update = (time) => {
-            treeGroup.rotation.y = Math.sin(time * 0.2) * 0.1; // Suave balanceo
-        };
-    }
-
-    // Escena 8: Corazón (Admiración y Amor)
-    function createHeartScene() {
-        const x = 0, y = 0;
-        const heartShape = new THREE.Shape();
-
-        // Fórmula paramétrica del corazón
-        heartShape.moveTo( x + 5, y + 5 );
-        heartShape.bezierCurveTo( x + 5, y + 5, x + 4, y, x, y );
-        heartShape.bezierCurveTo( x - 6, y, x - 6, y + 7,x - 6, y + 7 );
-        heartShape.bezierCurveTo( x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19 );
-        heartShape.bezierCurveTo( x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7 );
-        heartShape.bezierCurveTo( x + 16, y + 7, x + 16, y, x + 10, y );
-        heartShape.bezierCurveTo( x + 7, y, x + 5, y + 5, x + 5, y + 5 );
-
-        const geometry = new THREE.ShapeGeometry( heartShape );
-        // Centrar geometría
-        geometry.computeBoundingBox();
-        const xOffset = -0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-        const yOffset = -0.5 * ( geometry.boundingBox.max.y - geometry.boundingBox.min.y );
-        geometry.translate( xOffset, yOffset, 0 );
-        // Invertir Y porque el shape se dibuja al revés en 3D
-        geometry.rotateZ(Math.PI);
-
-        // Crear partículas a lo largo de la forma
-        const points = geometry.attributes.position.array;
-        const particleGeo = new THREE.BufferGeometry();
-        const particleMat = new THREE.PointsMaterial({
-            color: 0xef4444, // Red 500
-            size: 0.5,
-            transparent: true,
-            opacity: 0,
-            blending: THREE.AdditiveBlending
-        });
-
-        // Duplicar y esparcir puntos para dar volumen
-        const volPoints = [];
-        for(let i=0; i<points.length; i+=3) {
-            for(let j=0; j<5; j++){ // 5 partículas por vértice original
-                volPoints.push(
-                    points[i] + THREE.MathUtils.randFloatSpread(2),
-                    points[i+1] + THREE.MathUtils.randFloatSpread(2),
-                    THREE.MathUtils.randFloatSpread(4)
-                );
-            }
-        }
-        
-        particleGeo.setAttribute('position', new THREE.Float32BufferAttribute(volPoints, 3));
-        const heart = new THREE.Points(particleGeo, particleMat);
-        heart.scale.set(0.5, 0.5, 0.5); // Ajustar tamaño
-
-        scene.add(heart);
-        currentObjects.push(heart, particleMat);
-
-        gsap.to(particleMat, {opacity: 1, duration: 2});
-        
-        // Animación de latido
-        heart.userData.update = (time) => {
-            const scale = 0.5 + Math.sin(time * 5) * 0.05; // Latido rápido
-            heart.scale.set(scale, scale, scale);
-            heart.rotation.y = Math.sin(time) * 0.2;
-        };
-    }
-
-    // Escena Final: Galaxia de agradecimiento
-    function createFinalScene() {
-        const group = new THREE.Group();
-        
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
-        const colors = [];
-        const colorPalette = [0xfbbf24, 0xef4444, 0x3b82f6, 0xffffff];
-
-        for ( let i = 0; i < 3000; i ++ ) {
-            const x = THREE.MathUtils.randFloatSpread( 100 );
-            const y = THREE.MathUtils.randFloatSpread( 100 );
-            const z = THREE.MathUtils.randFloatSpread( 100 );
-            
-            // Hacer que formen una esfera
-            const vector = new THREE.Vector3(x,y,z);
-            vector.normalize().multiplyScalar(Math.random() * 40 + 10);
-
-            vertices.push( vector.x, vector.y, vector.z );
-
-            const color = new THREE.Color(colorPalette[Math.floor(Math.random() * colorPalette.length)]);
-            colors.push(color.r, color.g, color.b);
-        }
-
-        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-
-        const material = new THREE.PointsMaterial( { 
-            size: 0.8, 
-            vertexColors: true,
-            transparent: true,
-            opacity: 0,
-            blending: THREE.AdditiveBlending
-        } );
-
-        const galaxy = new THREE.Points( geometry, material );
-        group.add(galaxy);
-        scene.add(group);
-        currentObjects.push(group);
-
-        gsap.to(material, {opacity: 1, duration: 3});
-
-        group.userData.update = (time) => {
-            group.rotation.y = time * 0.1;
-            group.rotation.x = time * 0.05;
-        };
-    }
-
-    function loadSceneData(sceneName) {
-        clearCurrentObjects();
-        
-        switch(sceneName) {
-            case 'intro': createIntroScene(); break;
-            case 'path': createPathScene(); break;
-            case 'storm': createStormScene(); break;
-            case 'wisdom': createWisdomScene(); break;
-            case 'tree': createTreeScene(); break;
-            case 'heart': createHeartScene(); break;
-            case 'final': createFinalScene(); break;
-            // Escenas por defecto si no hay una específica
-            default: createIntroScene(); break;
-        }
-    }
-
-    // --- ANIMACIÓN PRINCIPAL ---
-    function animate() {
-        animationId = requestAnimationFrame(animate);
-
-        const time = clock.getElapsedTime();
-
-        // Actualizar partículas de fondo suavemente
-        if(particles) {
-            particles.rotation.y = time * 0.02;
-        }
-
-        // Interacción suave con el mouse
-        targetRotationX = (mouseY * 0.001);
-        targetRotationY = (mouseX * 0.001);
-        
-        camera.position.x += (mouseX * 0.01 - camera.position.x) * 0.05;
-        camera.position.y += (-mouseY * 0.01 - camera.position.y) * 0.05;
-        camera.lookAt(scene.position);
-
-        // Actualizar objetos específicos de la escena
-        currentObjects.forEach(obj => {
-            if(obj.userData && obj.userData.update) {
-                obj.userData.update(time);
-            }
-        });
-
-        renderer.render(scene, camera);
+    function onMouseMove(event) {
+        mouseX = (event.clientX - windowHalfX) * 0.05;
+        mouseY = (event.clientY - windowHalfY) * 0.05;
     }
 
     function onWindowResize() {
@@ -915,132 +618,193 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function onDocumentMouseMove(event) {
-        mouseX = (event.clientX - windowHalfX);
-        mouseY = (event.clientY - windowHalfY);
+    function clearScene() {
+        currentObjects.forEach(obj => {
+            scene.remove(obj);
+            if(obj.geometry) obj.geometry.dispose();
+            if(obj.material) obj.material.dispose();
+        });
+        currentObjects = [];
     }
 
-    function onDocumentTouchMove(event) {
-        if(event.touches.length === 1) {
-            mouseX = event.touches[0].pageX - windowHalfX;
-            mouseY = event.touches[0].pageY - windowHalfY;
+    // Generador de partículas auxiliar
+    function createParticleSystem(color, count, size, spread) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        for (let i = 0; i < count; i++) {
+            positions.push(
+                (Math.random() - 0.5) * spread,
+                (Math.random() - 0.5) * spread,
+                (Math.random() - 0.5) * spread
+            );
+        }
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({
+            color: color,
+            size: size,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+        currentObjects.push(particles);
+        return particles;
+    }
+
+    function loadSceneData(sceneName) {
+        clearScene();
+
+        switch(sceneName) {
+            case 'intro':
+                // Partículas doradas flotantes
+                const introParticles = createParticleSystem(0xffd700, 500, 0.2, 50);
+                introParticles.userData = { 
+                    update: () => { introParticles.rotation.y += 0.002; introParticles.rotation.x += 0.001; } 
+                };
+                break;
+
+            case 'path':
+                // Sendero de luz
+                const pathGeo = new THREE.BufferGeometry();
+                const pathPos = [];
+                for(let i=0; i<200; i++) {
+                    pathPos.push(
+                        (Math.random() - 0.5) * 10,
+                        -10 + (Math.random() * 2),
+                        -50 + (i * 0.5)
+                    );
+                }
+                pathGeo.setAttribute('position', new THREE.Float32BufferAttribute(pathPos, 3));
+                const pathMat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.3 });
+                const path = new THREE.Points(pathGeo, pathMat);
+                scene.add(path);
+                currentObjects.push(path);
+                path.userData = { update: () => { path.position.z += 0.1; if(path.position.z > 20) path.position.z = 0; } };
+                break;
+
+            case 'storm':
+                // Lluvia/Tormenta (pero protegida en el centro)
+                const rain = createParticleSystem(0x93c5fd, 1000, 0.1, 60);
+                rain.userData = { 
+                    update: () => {
+                        const positions = rain.geometry.attributes.position.array;
+                        for(let i=1; i<positions.length; i+=3) {
+                            positions[i] -= 0.5; // Caída
+                            if(positions[i] < -20) positions[i] = 20;
+                            // Evitar el centro (refugio)
+                            if(Math.abs(positions[i-1]) < 5 && positions[i] < 10) positions[i-1] += (Math.random() > 0.5 ? 2 : -2);
+                        }
+                        rain.geometry.attributes.position.needsUpdate = true;
+                    } 
+                };
+                break;
+
+            case 'wisdom':
+                // Orbes ascendentes (Sabiduría)
+                const orbs = createParticleSystem(0xfcd34d, 150, 0.5, 40);
+                orbs.userData = {
+                    update: () => {
+                        const pos = orbs.geometry.attributes.position.array;
+                        for(let i=1; i<pos.length; i+=3) {
+                            pos[i] += 0.05; // Ascender
+                            if(pos[i] > 20) pos[i] = -20;
+                        }
+                        orbs.geometry.attributes.position.needsUpdate = true;
+                        orbs.rotation.y += 0.001;
+                    }
+                };
+                break;
+
+            case 'tree':
+                // Abstracto: Árbol formado por esferas ascendentes
+                const trunkGeo = new THREE.CylinderGeometry(1, 1.5, 10, 8);
+                const trunkMat = new THREE.MeshLambertMaterial({ color: 0x451a03, wireframe: true });
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                trunk.position.y = -5;
+                scene.add(trunk);
+                currentObjects.push(trunk);
+
+                const leavesGeo = new THREE.SphereGeometry(6, 16, 16);
+                const leavesMat = new THREE.MeshLambertMaterial({ color: 0x15803d, wireframe: true, transparent: true, opacity: 0.5 });
+                const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+                leaves.position.y = 2;
+                scene.add(leaves);
+                currentObjects.push(leaves);
+
+                const treeParticles = createParticleSystem(0x22c55e, 200, 0.2, 15);
+                treeParticles.position.y = 2;
+                
+                trunk.userData = { update: () => { trunk.rotation.y += 0.005; leaves.rotation.y -= 0.003; treeParticles.rotation.y += 0.01; } };
+                break;
+
+            case 'heart':
+                // Corazón abstracto
+                const heartParticlesGeo = new THREE.BufferGeometry();
+                const heartPos = [];
+                for (let i = 0; i < 300; i++) {
+                    const t = Math.PI * 2 * Math.random();
+                    const r = 0.5 + Math.random() * 0.5;
+                    const x = 16 * Math.pow(Math.sin(t), 3);
+                    const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                    heartPos.push(x * r * 0.5, y * r * 0.5, (Math.random() - 0.5) * 5);
+                }
+                heartParticlesGeo.setAttribute('position', new THREE.Float32BufferAttribute(heartPos, 3));
+                const heartMat = new THREE.PointsMaterial({ color: 0xe11d48, size: 0.3, blending: THREE.AdditiveBlending });
+                const heart = new THREE.Points(heartParticlesGeo, heartMat);
+                scene.add(heart);
+                currentObjects.push(heart);
+                
+                let scalePhase = 0;
+                heart.userData = { 
+                    update: () => {
+                        scalePhase += 0.05;
+                        const scale = 1 + Math.sin(scalePhase) * 0.1; // Latido
+                        heart.scale.set(scale, scale, scale);
+                        heart.rotation.y = Math.sin(scalePhase * 0.2) * 0.2;
+                    } 
+                };
+                break;
+
+            case 'stars':
+            case 'final':
+                // Galaxia inmersiva
+                const galaxy = createParticleSystem(0xffffff, 2000, 0.15, 80);
+                galaxy.userData = { 
+                    update: () => { 
+                        galaxy.rotation.y += 0.001; 
+                        galaxy.rotation.z += 0.0005; 
+                    } 
+                };
+                break;
+                
+            default:
+                // Escena por defecto (estrellas suaves)
+                const defParticles = createParticleSystem(0xffffff, 300, 0.1, 40);
+                defParticles.userData = { update: () => { defParticles.rotation.y -= 0.001; } };
+                break;
         }
     }
 
-    //    
-    function createDots() {
-        dotsContainer.innerHTML = '';
-        cartaData.forEach((_, index) => {
-            const dot = document.createElement('div');
-            dot.className = 'dot';
-            if (index === 0) dot.classList.add('active');
-            // Opcional: hacer los dots clickeables
-            dot.addEventListener('click', () => updateCarta(index));
-            dotsContainer.appendChild(dot);
-        });
-    }
+    function animate() {
+        animationFrameId = requestAnimationFrame(animate);
 
-    function updateDots() {
-        const dots = document.querySelectorAll('.dot');
-        dots.forEach((dot, index) => {
-            if (index === currentStep) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
+        // Suavizar movimiento de cámara basado en el mouse
+        targetX = mouseX * 2;
+        targetY = mouseY * 2;
+        camera.position.x += (targetX - camera.position.x) * 0.02;
+        camera.position.y += (-targetY - camera.position.y + 5) * 0.02;
+        camera.lookAt(scene.position);
+
+        // Actualizar objetos específicos de la escena
+        currentObjects.forEach(obj => {
+            if(obj.userData && obj.userData.update) {
+                obj.userData.update();
             }
         });
+
+        renderer.render(scene, camera);
     }
-
-    function updateCarta(index) {
-        if (index < 0 || index >= cartaData.length) return;
-        
-        const isFinal = index === cartaData.length - 1;
-
-        // Ocultar texto actual
-        gsap.to(textContainer, {
-            opacity: 0, 
-            y: -20, 
-            duration: 0.5, 
-            onComplete: () => {
-                currentStep = index;
-                const data = cartaData[currentStep];
-
-                // Actualizar contenido
-                titleText.innerHTML = data.title;
-                if(data.title === "") {
-                    titleText.style.display = 'none';
-                } else {
-                    titleText.style.display = 'block';
-                }
-                
-                bodyText.innerHTML = `<p>${data.text}</p>`;
-
-                // Cambiar color de fondo
-                document.body.style.backgroundColor = data.color;
-                if(scene && scene.fog) {
-                    scene.fog.color.set(data.color);
-                }
-
-                // Cargar nueva escena 3D
-                loadSceneData(data.scene);
-
-                // Actualizar botones
-                prevBtn.disabled = currentStep === 0;
-                
-                if (isFinal) {
-                    nextBtn.style.display = 'none'; // Ocultar en el último paso
-                    dotsContainer.style.display = 'none';
-                    // Mantener la estética de papel al final
-                    textContainer.style.background = '#fdfaf6';
-                    textContainer.style.backgroundImage = 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'0.06\'/%3E%3C/svg%3E")';
-                    textContainer.style.border = '1px solid #d6d3d1';
-                } else {
-                    nextBtn.style.display = 'block';
-                    nextBtn.innerText = 'Siguiente';
-                    dotsContainer.style.display = 'flex';
-                    // Restaurar propiedades de papel
-                    textContainer.style.background = '#fdfaf6';
-                    textContainer.style.backgroundImage = 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'0.06\'/%3E%3C/svg%3E")';
-                    textContainer.style.border = '1px solid #d6d3d1';
-                }
-
-                updateDots();
-
-                // Mostrar nuevo texto
-                gsap.fromTo(textContainer, 
-                    {opacity: 0, y: 30}, 
-                    {opacity: 1, y: 0, duration: 1, ease: "power2.out"}
-                );
-            }
-        });
-    }
-
-    // Event Listeners de Botones
-    prevBtn.addEventListener('click', () => updateCarta(currentStep - 1));
-    nextBtn.addEventListener('click', () => updateCarta(currentStep + 1));
-
-    envelopeBtn.addEventListener('click', () => {
-        // 1. Iniciar animación de abrir sobre
-        envelopeBtn.classList.add('open');
-        instructionText.style.opacity = '0';
-        envelopeBtn.style.pointerEvents = 'none'; // Evitar doble click
-        
-        // 2. Esperar a que la carta salga y luego hacer transición al 3D
-        setTimeout(() => {
-            // Efecto inmersivo: nos acercamos a la carta
-            startScreen.style.transform = 'scale(4) translateY(50px)';
-            startScreen.style.opacity = '0';
-            
-            // 3. Cuando termina el fade out, mostramos la escena principal
-            setTimeout(() => {
-                startScreen.style.display = 'none';
-                init3D();
-                createDots();
-                updateCarta(0);
-            }, 1000);
-        }, 1800); // Dar tiempo a que el sobre termine su animación visual
-    });
-
 </script>
 </body>
 </html>
